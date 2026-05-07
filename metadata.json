@@ -1,0 +1,7 @@
+{
+  "name": "NEXSTIP",
+  "description": "A digital skills platform offering courses, AI-powered trainer matching, and career opportunities.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
