@@ -90,7 +90,7 @@ const FindTrainer = () => {
               </label>
               <input
                 type="text"
-                placeholder="e.g. Nairobi, Kenya"
+                placeholder="e.g. Kampala, Uganda"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
@@ -102,7 +102,7 @@ const FindTrainer = () => {
               </label>
               <input
                 type="text"
-                placeholder="e.g. React Development, UI Design"
+                placeholder="e.g. QuickBooks, Graphics Design"
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                 value={interest}
                 onChange={(e) => setInterest(e.target.value)}
