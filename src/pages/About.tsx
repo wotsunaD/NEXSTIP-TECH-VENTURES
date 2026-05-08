@@ -5,15 +5,15 @@ import { Target, Award, Users, Rocket, Heart, Shield } from 'lucide-react';
 const About = () => {
   const team = [
     {
-      name: 'Sarah Johnson',
-      role: 'Founder & CEO',
-      experience: '15+ years in EdTech and Digital Transformation. Former Google Lead.',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&h=400&q=80'
+      name: 'Derick Wotsuna',
+      role: 'Founder & Director',
+      experience: '8 years in EdTech and Digital Transformation.',
+      image: '/profile.png'
     },
     {
       name: 'David Chen',
       role: 'Head of Curriculum',
-      experience: 'PhD in Computer Science. Expert in developing K-12 digital literacy programs.',
+      experience: 'PhD in Computer Science. Expert in developing digital literacy programs.',
       image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&h=400&q=80'
     },
     {
@@ -118,12 +118,29 @@ const About = () => {
               transition={{ delay: index * 0.1 }}
               className="group"
             >
-              <div className="relative overflow-hidden rounded-3xl aspect-square mb-6">
+              <div className="relative overflow-hidden rounded-3xl aspect-square mb-6 transition-all shadow-sm">
+                {/* Blurred background for transparent images (Founder) */}
+                {member.image === '/profile.png' && (
+                  <div className="absolute inset-0 bg-emerald-100 overflow-hidden">
+                    <div className="absolute -inset-[20%] bg-gradient-to-tr from-emerald-400/30 via-teal-200/30 to-emerald-300/30 blur-2xl" />
+                    <div 
+                      className="absolute inset-0 bg-center bg-no-repeat scale-150 opacity-60 blur-3xl"
+                      style={{ backgroundImage: `url(${member.image})`, backgroundSize: '250%' }}
+                    />
+                    <div className="absolute inset-0 bg-emerald-900/5" />
+                  </div>
+                )}
                 <img
                   src={member.image}
                   alt={member.name}
-                  className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
+                  className={`object-cover w-full h-full relative z-10 group-hover:scale-110 transition-transform duration-500 ${member.image === '/profile.png' ? 'scale-90 brightness-[1.02]' : ''}`}
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target.src !== 'https://api.dicebear.com/7.x/initials/svg?seed=' + member.name) {
+                      target.src = 'https://api.dicebear.com/7.x/initials/svg?seed=' + member.name;
+                    }
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
                   <p className="text-white text-sm font-medium leading-relaxed">
