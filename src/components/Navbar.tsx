@@ -29,7 +29,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex-shrink-0">
-            <Logo className="h-20 w-auto md:h-24" />
+            <Logo className="h-24 w-auto md:h-28" />
           </div>
           
           {/* Desktop Navigation */}
