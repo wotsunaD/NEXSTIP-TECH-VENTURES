@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { BookOpen, MapPin, Briefcase, Lightbulb, Users, Home, Menu, X, Info, Calendar } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -13,6 +13,8 @@ import Logo from './Logo';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const isHome = location.pathname === '/';
 
   const navItems = [
     { to: '/', icon: Home, label: 'Home' },
@@ -27,7 +29,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex-shrink-0">
-            <Logo className="h-8 w-auto md:h-10" light={true} />
+            {!isHome && <Logo className="h-8 w-auto md:h-10" light={true} />}
           </div>
           
           {/* Desktop Navigation */}
