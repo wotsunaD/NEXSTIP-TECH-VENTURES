@@ -54,3 +54,14 @@ export interface Mentor {
   avatar: string;
   availability: string;
 }
+
+export interface SheetOpportunity {
+  id: string;
+  name: string;
+  type: string;
+  countries: string;
+  dueDate: string;
+  notes: string;
+  areaOfInterest: string;
+  link: string;
+}
