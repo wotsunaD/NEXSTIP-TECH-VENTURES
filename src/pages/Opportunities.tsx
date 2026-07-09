@@ -410,7 +410,7 @@ const Opportunities = () => {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-100 pb-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-emerald-600 font-semibold tracking-wider text-sm uppercase">
-            <Sparkles size={16} /> Global Registry
+           
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-slate-900">
             All round  for you.
