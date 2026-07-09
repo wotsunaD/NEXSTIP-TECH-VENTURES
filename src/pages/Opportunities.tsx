@@ -345,27 +345,46 @@ const Opportunities = () => {
     }
 
     // 7. Sorting
-    if (sortBy === 'soonest') {
-      result.sort((a, b) => {
-        const dateA = parseDueDate(a.dueDate);
-        const dateB = parseDueDate(b.dueDate);
-        if (!dateA) return 1; // Put ongoing last
-        if (!dateB) return -1;
-        return dateA.getTime() - dateB.getTime();
-      });
-    } else if (sortBy === 'furthest') {
-      result.sort((a, b) => {
-        const dateA = parseDueDate(a.dueDate);
-        const dateB = parseDueDate(b.dueDate);
-        if (!dateA) return 1;
-        if (!dateB) return -1;
-        return dateB.getTime() - dateA.getTime();
-      });
-    } else if (sortBy === 'name-asc') {
-      result.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortBy === 'name-desc') {
-      result.sort((a, b) => b.name.localeCompare(a.name));
-    }
+    const currentOpps = result.filter(opp => {
+      const d = parseDueDate(opp.dueDate);
+      return !d || d >= todayRef;
+    });
+    const pastDueOpps = result.filter(opp => {
+      const d = parseDueDate(opp.dueDate);
+      return d && d < todayRef;
+    });
+
+    const sortList = (list: typeof result) => {
+      if (sortBy === 'soonest') {
+        list.sort((a, b) => {
+          const dateA = parseDueDate(a.dueDate);
+          const dateB = parseDueDate(b.dueDate);
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1; // Put ongoing last
+          if (!dateB) return -1;
+          return dateA.getTime() - dateB.getTime();
+        });
+      } else if (sortBy === 'furthest') {
+        list.sort((a, b) => {
+          const dateA = parseDueDate(a.dueDate);
+          const dateB = parseDueDate(b.dueDate);
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1; // Put ongoing last
+          if (!dateB) return -1;
+          return dateB.getTime() - dateA.getTime();
+        });
+      } else if (sortBy === 'name-asc') {
+        list.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (sortBy === 'name-desc') {
+        list.sort((a, b) => b.name.localeCompare(a.name));
+      }
+      return list;
+    };
+
+    const sortedCurrent = sortList([...currentOpps]);
+    const sortedPastDue = sortList([...pastDueOpps]);
+
+    result = [...sortedCurrent, ...sortedPastDue];
 
     return result;
   }, [opportunities, searchQuery, selectedType, selectedCountries, selectedAreas, dateFilter, sortBy, showBookmarksOnly, bookmarks, todayRef]);
