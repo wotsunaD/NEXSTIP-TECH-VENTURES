@@ -123,6 +123,15 @@ function parseDueDate(dateStr: string): Date | null {
   return isNaN(parsed.getTime()) ? null : parsed;
 }
 
+// Checks if deadline has reached / passed (i.e. deadline date is strictly before referenceDate)
+function isDeadlineReached(dueDateStr: string, referenceDate: Date): boolean {
+  const parsedDate = parseDueDate(dueDateStr);
+  if (!parsedDate) return false; // Ongoing or No deadline -> not reached
+  const refStart = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+  const deadlineStart = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+  return deadlineStart < refStart;
+}
+
 const Opportunities = () => {
   const navigate = useNavigate();
   
@@ -156,8 +165,16 @@ const Opportunities = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
 
-  // Today reference
-  const todayRef = useMemo(() => new Date(2026, 6, 8), []); // July 8, 2026 as per metadata
+  // Today reference (start of today)
+  const todayRef = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }, []);
+
+  // Active opportunities whose deadline has not been reached
+  const activeOpportunities = useMemo(() => {
+    return opportunities.filter(opp => !isDeadlineReached(opp.dueDate, todayRef));
+  }, [opportunities, todayRef]);
 
   // Load CSV data & Bookmarks
   useEffect(() => {
@@ -209,13 +226,13 @@ const Opportunities = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Derive unique Types, Countries, and Areas of Interest from all parsed data for filters
+  // Derive unique Types, Countries, and Areas of Interest from active opportunities
   const filterOptions = useMemo(() => {
     const types = new Set<string>();
     const countries = new Set<string>();
     const areas = new Set<string>();
 
-    opportunities.forEach(opp => {
+    activeOpportunities.forEach(opp => {
       if (opp.type) types.add(opp.type);
       if (opp.countries) {
         opp.countries.split(',').map(c => c.trim()).forEach(c => {
@@ -236,7 +253,7 @@ const Opportunities = () => {
       countries: Array.from(countries).sort(),
       areas: Array.from(areas).sort()
     };
-  }, [opportunities]);
+  }, [activeOpportunities]);
 
   // Handle individual country checklist toggle
   const toggleCountry = (country: string) => {
@@ -270,9 +287,9 @@ const Opportunities = () => {
     setCurrentPage(1);
   };
 
-  // Filter & Sort opportunities
+  // Filter & Sort active opportunities
   const processedOpportunities = useMemo(() => {
-    let result = [...opportunities];
+    let result = [...activeOpportunities];
 
     // 1. Bookmarks Only
     if (showBookmarksOnly) {
@@ -326,18 +343,16 @@ const Opportunities = () => {
           return !parsedDate;
         }
         
+        if (dateFilter === 'Upcoming') {
+          return !!parsedDate;
+        }
+
         if (parsedDate) {
-          if (dateFilter === 'Upcoming') {
-            return parsedDate >= todayRef;
-          }
-          if (dateFilter === 'Past due') {
-            return parsedDate < todayRef;
-          }
-          if (dateFilter === 'Year-2025') {
-            return parsedDate.getFullYear() === 2025;
-          }
           if (dateFilter === 'Year-2026') {
             return parsedDate.getFullYear() === 2026;
+          }
+          if (dateFilter === 'Year-2027') {
+            return parsedDate.getFullYear() === 2027;
           }
         }
         return false;
@@ -345,49 +360,32 @@ const Opportunities = () => {
     }
 
     // 7. Sorting
-    const currentOpps = result.filter(opp => {
-      const d = parseDueDate(opp.dueDate);
-      return !d || d >= todayRef;
-    });
-    const pastDueOpps = result.filter(opp => {
-      const d = parseDueDate(opp.dueDate);
-      return d && d < todayRef;
-    });
-
-    const sortList = (list: typeof result) => {
-      if (sortBy === 'soonest') {
-        list.sort((a, b) => {
-          const dateA = parseDueDate(a.dueDate);
-          const dateB = parseDueDate(b.dueDate);
-          if (!dateA && !dateB) return 0;
-          if (!dateA) return 1; // Put ongoing last
-          if (!dateB) return -1;
-          return dateA.getTime() - dateB.getTime();
-        });
-      } else if (sortBy === 'furthest') {
-        list.sort((a, b) => {
-          const dateA = parseDueDate(a.dueDate);
-          const dateB = parseDueDate(b.dueDate);
-          if (!dateA && !dateB) return 0;
-          if (!dateA) return 1; // Put ongoing last
-          if (!dateB) return -1;
-          return dateB.getTime() - dateA.getTime();
-        });
-      } else if (sortBy === 'name-asc') {
-        list.sort((a, b) => a.name.localeCompare(b.name));
-      } else if (sortBy === 'name-desc') {
-        list.sort((a, b) => b.name.localeCompare(a.name));
-      }
-      return list;
-    };
-
-    const sortedCurrent = sortList([...currentOpps]);
-    const sortedPastDue = sortList([...pastDueOpps]);
-
-    result = [...sortedCurrent, ...sortedPastDue];
+    if (sortBy === 'soonest') {
+      result.sort((a, b) => {
+        const dateA = parseDueDate(a.dueDate);
+        const dateB = parseDueDate(b.dueDate);
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1; // Put ongoing last
+        if (!dateB) return -1;
+        return dateA.getTime() - dateB.getTime();
+      });
+    } else if (sortBy === 'furthest') {
+      result.sort((a, b) => {
+        const dateA = parseDueDate(a.dueDate);
+        const dateB = parseDueDate(b.dueDate);
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1; // Put ongoing last
+        if (!dateB) return -1;
+        return dateB.getTime() - dateA.getTime();
+      });
+    } else if (sortBy === 'name-asc') {
+      result.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortBy === 'name-desc') {
+      result.sort((a, b) => b.name.localeCompare(a.name));
+    }
 
     return result;
-  }, [opportunities, searchQuery, selectedType, selectedCountries, selectedAreas, dateFilter, sortBy, showBookmarksOnly, bookmarks, todayRef]);
+  }, [activeOpportunities, searchQuery, selectedType, selectedCountries, selectedAreas, dateFilter, sortBy, showBookmarksOnly, bookmarks]);
 
   // Paginated active chunk
   const paginatedOpportunities = useMemo(() => {
@@ -432,7 +430,7 @@ const Opportunities = () => {
            
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight text-slate-900">
-            All round  for you.
+            All-round  for you.
           </h1>
           <p className="text-slate-600 max-w-3xl">
             Explore curated, high-impact opportunities sourced from around the globe.
@@ -444,8 +442,8 @@ const Opportunities = () => {
           <div className="flex items-center gap-3 bg-emerald-50 text-emerald-800 px-5 py-3 rounded-2xl border border-emerald-100 self-start md:self-end">
             <Briefcase size={20} className="text-emerald-600" />
             <div>
-              <p className="text-xs font-medium text-emerald-700 uppercase tracking-wider">Total Opportunities</p>
-              <p className="text-lg font-bold leading-none mt-0.5">{opportunities.length.toLocaleString()}</p>
+              <p className="text-xs font-medium text-emerald-700 uppercase tracking-wider">Active Opportunities</p>
+              <p className="text-lg font-bold leading-none mt-0.5">{activeOpportunities.length.toLocaleString()}</p>
             </div>
           </div>
         )}
@@ -549,7 +547,7 @@ const Opportunities = () => {
                 All
               </button>
               {filterOptions.types.map(type => {
-                const count = opportunities.filter(o => o.type === type).length;
+                const count = activeOpportunities.filter(o => o.type === type).length;
                 return (
                   <button
                     key={type}
@@ -575,12 +573,11 @@ const Opportunities = () => {
             <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Deadline Status</h3>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { value: 'All', label: 'All Deadlines' },
-                { value: 'Upcoming', label: 'Upcoming' },
-                { value: 'Past due', label: 'Past due' },
+                { value: 'All', label: 'All Active' },
+                { value: 'Upcoming', label: 'Specific Deadline' },
                 { value: 'Ongoing', label: 'Ongoing Only' },
-                { value: 'Year-2025', label: 'Due in 2025' },
-                { value: 'Year-2026', label: 'Due in 2026' }
+                { value: 'Year-2026', label: 'Due in 2026' },
+                { value: 'Year-2027', label: 'Due in 2027' }
               ].map(opt => (
                 <button
                   key={opt.value}
@@ -911,9 +908,7 @@ const Opportunities = () => {
                         <span className={`px-2 py-0.5 rounded ${
                           opp.dueDate.toLowerCase().includes('ongoing') || opp.dueDate.toLowerCase().includes('no deadline')
                             ? 'bg-emerald-50 text-emerald-700 font-medium'
-                            : parseDueDate(opp.dueDate) && parseDueDate(opp.dueDate)! < todayRef
-                              ? 'bg-red-50 text-red-600 line-through opacity-70'
-                              : 'text-slate-700 bg-slate-100'
+                            : 'text-slate-700 bg-slate-100 font-medium'
                         }`}>
                           {opp.dueDate}
                         </span>
@@ -1045,12 +1040,11 @@ const Opportunities = () => {
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest">Deadline Status</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: 'All', label: 'All Deadlines' },
-                    { value: 'Upcoming', label: 'Upcoming' },
-                    { value: 'Past due', label: 'Past due' },
+                    { value: 'All', label: 'All Active' },
+                    { value: 'Upcoming', label: 'Specific Deadline' },
                     { value: 'Ongoing', label: 'Ongoing Only' },
-                    { value: 'Year-2025', label: 'Due in 2025' },
-                    { value: 'Year-2026', label: 'Due in 2026' }
+                    { value: 'Year-2026', label: 'Due in 2026' },
+                    { value: 'Year-2027', label: 'Due in 2027' }
                   ].map(opt => (
                     <button
                       key={opt.value}
